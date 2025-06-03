@@ -2,18 +2,37 @@
     "## Comment" = "Do NOT change this file, Gorm maintains it";
     AppController = {
 	Actions = (
-	    "showPrefPanel:"
+	    "showPrefPanel:",
+	    "openFile:"
 	);
 	Outlets = (
-	    "_window"
+	    "_window",
+	    "_movieView"
 	);
 	Super = NSObject;
     };
     FirstResponder = {
 	Actions = (
+	    "openFile:",
 	    "orderFrontFontPanel:",
 	    "showPrefPanel:"
 	);
 	Super = NSObject;
+    };
+    NSMenuView = {
+	Actions = (
+	);
+	Outlets = (
+	    "_titleView",
+	    "_titleView"
+	);
+	Super = NSView;
+    };
+    NewClass = {
+	Actions = (
+	);
+	Outlets = (
+	);
+	Super = NSView;
     };
 }

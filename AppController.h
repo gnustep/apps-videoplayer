@@ -11,13 +11,13 @@
 #ifndef _PCAPPPROJ_APPCONTROLLER_H
 #define _PCAPPPROJ_APPCONTROLLER_H
 
+#import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
-// Uncomment if your application is Renaissance-based
-//#import <Renaissance/Renaissance.h>
 
 @interface AppController : NSObject
 {
   IBOutlet NSWindow *_window;
+  IBOutlet NSMovieView *_movieView;
 }
 
 // Class methods...
@@ -37,6 +37,7 @@
 
 // Actions...
 - (IBAction) showPrefPanel: (id)sender;
+- (IBAction) openFile: (id)sender;
 
 @end
 

@@ -70,4 +70,26 @@
 {
 }
 
+- (IBAction) openFile: (id)sender
+{
+  NSOpenPanel *op = [NSOpenPanel openPanel];
+  NSModalResponse response = [op runModal];
+
+  [op setAllowedFileTypes: [NSMovie movieUnfilteredFileTypes]];
+  if (response == NSModalResponseOK)
+    {
+      NSString *filename = [op filename];
+
+      if (filename != nil)
+	{
+	  NSURL *url = [NSURL URLWithString: filename];
+	  NSMovie *movie = [[NSMovie alloc] initWithURL: url byReference: YES]; 
+
+	  NSLog(@"filename = %@", filename);
+	  [_movieView setMovie: movie];
+	  [_movieView start: sender];
+	}
+    }
+}
+
 @end
