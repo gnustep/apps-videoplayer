@@ -28,7 +28,7 @@
   [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (id) init
+- (instancetype) init
 {
   if ((self = [super init]))
     {
@@ -43,6 +43,7 @@
 
 - (void) awakeFromNib
 {
+  [_volume setFloatValue: 1.0];
 }
 
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif
@@ -102,6 +103,11 @@
 	    }
 	}
     }
+}
+
+- (IBAction) volume: (id)sender
+{
+  [_movieView setVolume: [sender floatValue]];
 }
 
 @end

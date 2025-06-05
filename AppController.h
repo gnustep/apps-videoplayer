@@ -19,13 +19,14 @@
   IBOutlet NSWindow *_window;
   IBOutlet NSMovieView *_movieView;
   IBOutlet NSPanel *_controlsPanel;
+  IBOutlet NSSlider *_volume;
 }
 
 // Class methods...
 + (void)  initialize;
 
 // Initialization
-- (id) init;
+- (instancetype) init;
 - (void) dealloc;
 - (void) awakeFromNib;
 
@@ -39,6 +40,7 @@
 // Actions...
 - (IBAction) showPrefPanel: (id)sender;
 - (IBAction) openFile: (id)sender;
+- (IBAction) volume: (id)sender;
 
 @end
 

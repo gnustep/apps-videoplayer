@@ -3,17 +3,20 @@
     AppController = {
 	Actions = (
 	    "showPrefPanel:",
-	    "openFile:"
+	    "openFile:",
+	    "volume:"
 	);
 	Outlets = (
 	    "_window",
 	    "_movieView",
-	    "_controlsPanel"
+	    "_controlsPanel",
+	    "_volume"
 	);
 	Super = NSObject;
     };
     FirstResponder = {
 	Actions = (
+	    "volume:",
 	    "openFile:",
 	    "orderFrontFontPanel:",
 	    "showPrefPanel:"
