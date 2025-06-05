@@ -7,7 +7,8 @@
 	);
 	Outlets = (
 	    "_window",
-	    "_movieView"
+	    "_movieView",
+	    "_controlsPanel"
 	);
 	Super = NSObject;
     };

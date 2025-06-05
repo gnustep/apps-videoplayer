@@ -73,9 +73,10 @@
 - (IBAction) openFile: (id)sender
 {
   NSOpenPanel *op = [NSOpenPanel openPanel];
-  NSModalResponse response = [op runModal];
+  NSModalResponse response; 
 
   [op setAllowedFileTypes: [NSMovie movieUnfilteredFileTypes]];
+  response = [op runModal];
   if (response == NSModalResponseOK)
     {
       NSString *filename = [op filename];
@@ -83,11 +84,22 @@
       if (filename != nil)
 	{
 	  NSURL *url = [NSURL URLWithString: filename];
-	  NSMovie *movie = [[NSMovie alloc] initWithURL: url byReference: YES]; 
-
 	  NSLog(@"filename = %@", filename);
-	  [_movieView setMovie: movie];
-	  [_movieView start: sender];
+	  if (url != nil)
+	    {
+	      NSMovie *movie = [[NSMovie alloc] initWithURL: url byReference: NO]; 
+	      NSRect frame = NSZeroRect;
+	      
+	      NSLog(@"URL = %@", url);
+	      NSLog(@"_movieView = %@", _movieView);
+	      [_movieView setMovie: movie];
+	      [_movieView start: sender];
+	      frame = [_movieView movieRect];
+
+	      // Resize and show the window...
+	      [_window setContentSize: frame.size];
+	      [_window makeKeyAndOrderFront: sender];
+	    }
 	}
     }
 }

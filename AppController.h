@@ -18,6 +18,7 @@
 {
   IBOutlet NSWindow *_window;
   IBOutlet NSMovieView *_movieView;
+  IBOutlet NSPanel *_controlsPanel;
 }
 
 // Class methods...
