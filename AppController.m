@@ -10,13 +10,6 @@
 
 #import "AppController.h"
 
-@interface NSMovieView (private)
-
-- (NSString *) statusString;
-
-@end
-
-
 @implementation AppController
 
 + (void) initialize
@@ -103,6 +96,7 @@
 	      NSLog(@"_movieView = %@", _movieView);
 	      [_movieView setMovie: movie];
 	      [_movieView start: sender];
+	      // [_movieView setStatusField: _info];
 	      frame = [_movieView movieRect];
 
 	      // Resize and show the window...

@@ -19,10 +19,17 @@
     };
     FirstResponder = {
 	Actions = (
+	    "clear:",
+	    "gotoBeginning:",
+	    "gotoEnd:",
+	    "gotoPosterFrame:",
 	    "mute:",
 	    "openFile:",
 	    "orderFrontFontPanel:",
 	    "showPrefPanel:",
+	    "start:",
+	    "stepBack:",
+	    "stepForward:",
 	    "volume:"
 	);
 	Super = NSObject;
@@ -33,6 +40,12 @@
 	Outlets = (
 	    "_titleView",
 	    "_titleView"
+	);
+	Super = NSView;
+    };
+    NSMovieView = {
+	Actions = (
+	    "selectAll:"
 	);
 	Super = NSView;
     };
