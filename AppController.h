@@ -20,6 +20,8 @@
   IBOutlet NSMovieView *_movieView;
   IBOutlet NSPanel *_controlsPanel;
   IBOutlet NSSlider *_volume;
+  IBOutlet NSSwitch *_mute;
+  IBOutlet NSTextField *_info;
 }
 
 // Class methods...
@@ -41,6 +43,7 @@
 - (IBAction) showPrefPanel: (id)sender;
 - (IBAction) openFile: (id)sender;
 - (IBAction) volume: (id)sender;
+- (IBAction) mute: (id)sender;
 
 @end
 

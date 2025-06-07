@@ -4,22 +4,26 @@
 	Actions = (
 	    "showPrefPanel:",
 	    "openFile:",
-	    "volume:"
+	    "volume:",
+	    "mute:"
 	);
 	Outlets = (
 	    "_window",
 	    "_movieView",
 	    "_controlsPanel",
-	    "_volume"
+	    "_volume",
+	    "_mute",
+	    "_info"
 	);
 	Super = NSObject;
     };
     FirstResponder = {
 	Actions = (
-	    "volume:",
+	    "mute:",
 	    "openFile:",
 	    "orderFrontFontPanel:",
-	    "showPrefPanel:"
+	    "showPrefPanel:",
+	    "volume:"
 	);
 	Super = NSObject;
     };

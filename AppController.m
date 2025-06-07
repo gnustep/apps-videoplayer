@@ -10,6 +10,13 @@
 
 #import "AppController.h"
 
+@interface NSMovieView (private)
+
+- (NSString *) statusString;
+
+@end
+
+
 @implementation AppController
 
 + (void) initialize
@@ -44,6 +51,7 @@
 - (void) awakeFromNib
 {
   [_volume setFloatValue: 1.0];
+  [_info setStringValue: @""];
 }
 
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif
@@ -108,6 +116,11 @@
 - (IBAction) volume: (id)sender
 {
   [_movieView setVolume: [sender floatValue]];
+}
+
+- (IBAction) mute: (id)sender
+{
+  [_movieView setMuted: [sender state] == NSOnState ? YES : NO];
 }
 
 @end
