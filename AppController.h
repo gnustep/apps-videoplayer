@@ -14,11 +14,14 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
-@interface AppController : NSObject
+@interface AppController : NSObject <NSTableViewDelegate, NSTableViewDataSource>
 {
   IBOutlet NSWindow *_window;
   IBOutlet NSMovieView *_movieView;
   IBOutlet NSPanel *_controlsPanel;
+  IBOutlet NSPanel *_mediaPanel;
+  IBOutlet NSTableView *_mediaTable;
+  IBOutlet NSOutlineView *_playlistOutline;
   IBOutlet NSSlider *_volume;
   IBOutlet NSSwitch *_mute;
   IBOutlet NSTextField *_info;
@@ -26,11 +29,6 @@
 
 // Class methods...
 + (void)  initialize;
-
-// Initialization
-- (instancetype) init;
-- (void) dealloc;
-- (void) awakeFromNib;
 
 // Notification methods...
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif;

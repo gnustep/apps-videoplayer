@@ -28,23 +28,13 @@
   [[NSUserDefaults standardUserDefaults] synchronize];
 }
 
-- (instancetype) init
-{
-  if ((self = [super init]))
-    {
-    }
-  return self;
-}
-
-- (void) dealloc
-{
-  [super dealloc];
-}
-
 - (void) awakeFromNib
 {
   [_volume setFloatValue: 1.0];
   [_info setStringValue: @""];
+
+  [_mediaTable setDelegate: self];
+  [_mediaTable setDataSource: self];
 }
 
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif
@@ -85,18 +75,15 @@
 
       if (filename != nil)
 	{
-	  NSURL *url = [NSURL URLWithString: filename];
-	  NSLog(@"filename = %@", filename);
+	  NSURL *url = [NSURL fileURLWithPath: filename];
+
 	  if (url != nil)
 	    {
 	      NSMovie *movie = [[NSMovie alloc] initWithURL: url byReference: NO]; 
 	      NSRect frame = NSZeroRect;
 	      
-	      NSLog(@"URL = %@", url);
-	      NSLog(@"_movieView = %@", _movieView);
 	      [_movieView setMovie: movie];
 	      [_movieView start: sender];
-	      // [_movieView setStatusField: _info];
 	      frame = [_movieView movieRect];
 
 	      // Resize and show the window...
@@ -116,5 +103,30 @@
 {
   [_movieView setMuted: [sender state] == NSOnState ? YES : NO];
 }
+
+// Data Source (TableView)
+
+- (NSInteger) numberOfRowsInTableView: (NSTableView *)tv
+{
+  return 0;
+}
+
+- (id)           tableView: (NSTableView *)tv
+ objectValueForTableColumn: (NSTableColumn *)tc
+		       row: (NSInteger)row
+{
+  return nil;
+}
+
+- (void) tableView: (NSTableView *)tv
+    setObjectValue: (id)value
+    forTableColumn: (NSTableColumn *)tc
+	       row: (NSInteger)row
+{
+  // nothing yet...
+}
+
+// Delegate (TableView)
+
 
 @end

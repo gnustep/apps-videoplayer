@@ -5,7 +5,8 @@
 	    "showPrefPanel:",
 	    "openFile:",
 	    "volume:",
-	    "mute:"
+	    "mute:",
+	    "time:"
 	);
 	Outlets = (
 	    "_window",
@@ -13,7 +14,12 @@
 	    "_controlsPanel",
 	    "_volume",
 	    "_mute",
-	    "_info"
+	    "_info",
+	    "_time",
+	    "_timeSlider",
+	    "_mediaPanel",
+	    "_mediaTable",
+	    "_playlistOutline"
 	);
 	Super = NSObject;
     };
@@ -24,6 +30,7 @@
 	    "gotoEnd:",
 	    "gotoPosterFrame:",
 	    "mute:",
+	    "time:",
 	    "openFile:",
 	    "orderFrontFontPanel:",
 	    "showPrefPanel:",
@@ -40,19 +47,6 @@
 	Outlets = (
 	    "_titleView",
 	    "_titleView"
-	);
-	Super = NSView;
-    };
-    NSMovieView = {
-	Actions = (
-	    "selectAll:"
-	);
-	Super = NSView;
-    };
-    NewClass = {
-	Actions = (
-	);
-	Outlets = (
 	);
 	Super = NSView;
     };
