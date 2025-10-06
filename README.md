@@ -37,10 +37,10 @@ make
 
 ```zsh
 # If an .app bundle was created
-open ./VideoPlayer.app
+gopen ./VideoPlayer.app
 
 # Or run the binary produced by the build (if present)
-./VideoPlayer
+./VideoPlayer.app/VideoPlayer
 ```
 
 If `make` fails, inspect the GNUmakefile output for missing GNUstep dependencies or incorrect GNUstep environment setup.
