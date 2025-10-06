@@ -20,11 +20,8 @@ This repository contains the source, interface definition, and build files for a
 2. Source the GNUstep environment script from your installation so make knows where to find GNUstep makefiles. Common locations include:
 
 ```zsh
-# Example (Intel Homebrew or packaged GNUstep)
-source /usr/local/GNUstep/System/Library/Makefiles/GNUstep.sh
-
-# Example (Homebrew on Apple Silicon may place packages under /opt/homebrew)
-# source /opt/homebrew/opt/gnustep-make/libexec/gnustep-make/Library/Makefiles/GNUstep.sh
+# Example
+. /usr/local/GNUstep/System/Library/Makefiles/GNUstep.sh
 ```
 
 3. Build the project:
