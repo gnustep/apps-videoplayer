@@ -33,7 +33,7 @@ VideoPlayer_APPLICATION_ICON =
 #
 VideoPlayer_RESOURCE_FILES = \
 Resources/VideoPlayer.gorm \
-
+Resources/videoplayer.png \
 
 #
 # Header files

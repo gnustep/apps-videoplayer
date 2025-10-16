@@ -10,4 +10,5 @@
     NSMainNibFile = "VideoPlayer.gorm";
     NSPrincipalClass = NSApplication;
     NSRole = Application;
+    NSIcon = videoplayer.png;
 }
