@@ -25,6 +25,8 @@
   IBOutlet NSSlider *_volume;
   IBOutlet NSSwitch *_mute;
   IBOutlet NSTextField *_info;
+  
+  NSMutableArray *_playedVideos;
 }
 
 // Class methods...

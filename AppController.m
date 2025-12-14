@@ -33,6 +33,8 @@
   [_volume setFloatValue: 1.0];
   [_info setStringValue: @""];
 
+  _playedVideos = [[NSMutableArray alloc] init];
+  
   [_mediaTable setDelegate: self];
   [_mediaTable setDataSource: self];
 }
@@ -86,6 +88,10 @@
 	      [_movieView start: sender];
 	      frame = [_movieView movieRect];
 
+	      // Add to played videos list
+	      [_playedVideos addObject: filename];
+	      [_mediaTable reloadData];
+
 	      // Resize and show the window...
 	      [_window setContentSize: frame.size];
 	      [_window makeKeyAndOrderFront: sender];
@@ -108,13 +114,18 @@
 
 - (NSInteger) numberOfRowsInTableView: (NSTableView *)tv
 {
-  return 0;
+  return [_playedVideos count];
 }
 
 - (id)           tableView: (NSTableView *)tv
  objectValueForTableColumn: (NSTableColumn *)tc
 		       row: (NSInteger)row
 {
+  if (row >= 0 && row < [_playedVideos count])
+    {
+      NSString *fullPath = [_playedVideos objectAtIndex: row];
+      return [fullPath lastPathComponent];
+    }
   return nil;
 }
 
