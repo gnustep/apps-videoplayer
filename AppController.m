@@ -39,6 +39,12 @@
   [_mediaTable setDataSource: self];
 }
 
+- (void) dealloc
+{
+  RELEASE(_playedVideos);
+  [super dealloc];
+}
+
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif
 {
 // Uncomment if your application is Renaissance-based
