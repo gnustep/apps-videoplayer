@@ -14,7 +14,7 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
-@interface AppController : NSObject <NSTableViewDelegate, NSTableViewDataSource>
+@interface AppController : NSObject <NSTableViewDelegate, NSTableViewDataSource, NSWindowDelegate>
 {
   IBOutlet NSWindow *_window;
   IBOutlet NSMovieView *_movieView;
@@ -25,7 +25,7 @@
   IBOutlet NSSlider *_volume;
   IBOutlet NSSwitch *_mute;
   IBOutlet NSTextField *_info;
-  
+
   NSMutableArray *_playedVideos;
 }
 

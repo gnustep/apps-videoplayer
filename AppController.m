@@ -37,6 +37,8 @@
   
   [_mediaTable setDelegate: self];
   [_mediaTable setDataSource: self];
+  
+  [_window setDelegate: self];
 }
 
 - (void) dealloc
@@ -145,5 +147,33 @@
 
 // Delegate (TableView)
 
+// Window Delegate
+
+- (NSSize) windowWillResize: (NSWindow *)sender
+		     toSize: (NSSize)frameSize
+{
+  NSMovie *movie = [_movieView movie];
+  
+  if (movie != nil)
+    {
+      NSRect movieRect = [_movieView movieRect];
+      
+      if (movieRect.size.width > 0 && movieRect.size.height > 0)
+	{
+	  CGFloat aspectRatio = movieRect.size.width / movieRect.size.height;
+	  NSRect frame = [_window frame];
+	  NSRect contentRect = [_window contentRectForFrameRect: frame];
+	  
+	  // Calculate new content size
+	  CGFloat newWidth = frameSize.width - (frame.size.width - contentRect.size.width);
+	  CGFloat newHeight = newWidth / aspectRatio;
+	  
+	  // Adjust frame size to maintain aspect ratio
+	  frameSize.height = newHeight + (frame.size.height - contentRect.size.height);
+	}
+    }
+  
+  return frameSize;
+}
 
 @end
