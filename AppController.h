@@ -27,6 +27,7 @@
   IBOutlet NSTextField *_info;
 
   NSMutableArray *_playedVideos;
+  NSMutableDictionary *_videoLengths;
 }
 
 // Class methods...
