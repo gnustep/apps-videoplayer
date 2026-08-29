@@ -7,6 +7,7 @@
     CopyrightDescription = "Released under ...";
     FullVersionID = "0.1";
     NSExecutable = VideoPlayer;
+    NSIcon = "videoplayer.png";
     NSMainNibFile = "VideoPlayer.gorm";
     NSPrincipalClass = NSApplication;
     NSRole = Application;

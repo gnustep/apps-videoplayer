@@ -25,7 +25,7 @@ include $(GNUSTEP_MAKEFILES)/common.make
 VERSION = 0.1
 PACKAGE_NAME = VideoPlayer
 APP_NAME = VideoPlayer
-VideoPlayer_APPLICATION_ICON = 
+VideoPlayer_APPLICATION_ICON = videoplayer.png
 
 
 #
@@ -33,6 +33,7 @@ VideoPlayer_APPLICATION_ICON =
 #
 VideoPlayer_RESOURCE_FILES = \
 Resources/VideoPlayer.gorm \
+Resources/videoplayer.png \
 
 
 #

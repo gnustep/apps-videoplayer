@@ -59,7 +59,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
   _playedVideos = [[NSMutableArray alloc] init];
   _videoLengths = [[NSMutableDictionary alloc] init];
-  _reloadingPlaylistViews = NO;
+  _reloadingPlaylistViews = YES;
   while ((object = [enumerator nextObject]) != nil)
     {
       if ([object isKindOfClass: [NSString class]])
@@ -88,8 +88,16 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif
 {
+  NSImage *icon = [NSImage imageNamed: @"videoplayer.png"];
+
   // Uncomment if your application is Renaissance-based
   //  [NSBundle loadGSMarkupNamed: @"Main" owner: self];
+  if (icon != nil)
+    {
+      [NSApp setApplicationIconImage: icon];
+    }
+  [_playlistOutline deselectAll: self];
+  _reloadingPlaylistViews = NO;
 }
 
 - (BOOL) applicationShouldTerminate: (id)sender
@@ -554,10 +562,12 @@ willDisplayOutlineCell: (id)cell
 
 - (void) reloadPlaylistViews
 {
+  BOOL wasReloadingPlaylistViews = _reloadingPlaylistViews;
+
   _reloadingPlaylistViews = YES;
   [_mediaTable reloadData];
   [_playlistOutline reloadData];
-  _reloadingPlaylistViews = NO;
+  _reloadingPlaylistViews = wasReloadingPlaylistViews;
 }
 
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename
