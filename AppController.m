@@ -20,8 +20,11 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender;
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
 - (void) savePlayedVideos;
+- (void) reloadPlaylistViews;
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename;
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename;
+- (NSString *) displayValueForVideoAtPath: (NSString *)filename
+                             columnIdentifier: (id)identifier;
 - (NSString *) stringFromDuration: (int64_t)duration;
 @end
 
@@ -56,6 +59,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
   _playedVideos = [[NSMutableArray alloc] init];
   _videoLengths = [[NSMutableDictionary alloc] init];
+  _reloadingPlaylistViews = NO;
   while ((object = [enumerator nextObject]) != nil)
     {
       if ([object isKindOfClass: [NSString class]])
@@ -66,6 +70,11 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   
   [_mediaTable setDelegate: self];
   [_mediaTable setDataSource: self];
+  
+  [_playlistOutline setDelegate: self];
+  [_playlistOutline setDataSource: self];
+  [self reloadPlaylistViews];
+  [_playlistOutline deselectAll: self];
   
   [_window setDelegate: self];
 }
@@ -95,6 +104,22 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (BOOL) application: (NSApplication *)application
 	    openFile: (NSString *)fileName
 {
+  if (fileName == nil)
+    {
+      return NO;
+    }
+
+  if ([self playVideoAtPath: fileName sender: application])
+    {
+      if ([self addPlayedVideoIfNeeded: fileName])
+        {
+          [self savePlayedVideos];
+          [self reloadPlaylistViews];
+        }
+
+      return YES;
+    }
+
   return NO;
 }
 
@@ -114,16 +139,16 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
       NSString *filename = [op filename];
 
       if (filename != nil)
-	{
-	  if ([self playVideoAtPath: filename sender: sender])
-	    {
-	      if ([self addPlayedVideoIfNeeded: filename])
-		{
-		  [self savePlayedVideos];
-		  [_mediaTable reloadData];
-		}
-	    }
-	}
+        {
+          if ([self playVideoAtPath: filename sender: sender])
+            {
+              if ([self addPlayedVideoIfNeeded: filename])
+                {
+                  [self savePlayedVideos];
+                  [self reloadPlaylistViews];
+                }
+            }
+        }
     }
 }
 
@@ -153,12 +178,14 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
       if ([[tc identifier] isEqualToString: @"column1"])
         {
           NSString *fullPath = [_playedVideos objectAtIndex: row];
-          return [fullPath lastPathComponent];
+          return [self displayValueForVideoAtPath: fullPath
+                                 columnIdentifier: [tc identifier]];
         }
       else if ([[tc identifier] isEqualToString: @"column2"])
         {
           NSString *fullPath = [_playedVideos objectAtIndex: row];
-          return [self lengthStringForVideoAtPath: fullPath];
+          return [self displayValueForVideoAtPath: fullPath
+                                 columnIdentifier: [tc identifier]];
         }
     }
   return nil;
@@ -172,18 +199,274 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   // nothing yet...
 }
 
+// Delegate (TableView)
+
 - (BOOL) tableView: (NSTableView *)tv
   shouldSelectRow: (NSInteger)row
 {
-  if (row >= 0 && row < [_playedVideos count])
-    {
-      [self playVideoAtPath: [_playedVideos objectAtIndex: row] sender: tv];
-    }
-
   return YES;
 }
 
-// Delegate (TableView)
+// DataSource NSOutlineView
+
+- (id) outlineView: (NSOutlineView *)ov
+	     child: (NSInteger)c
+	    ofItem: (id)item
+{
+  if (item == nil && c >= 0 && c < [_playedVideos count])
+    {
+      return [_playedVideos objectAtIndex: c];
+    }
+
+  return nil;
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+    isItemExpandable: (id)item
+{
+  return NO;
+}
+
+- (NSInteger) outlineView: (NSOutlineView *)ov
+  numberOfChildrenOfItem: (id)item
+{
+  if (item == nil)
+    {
+      return [_playedVideos count];
+    }
+
+  return 0;
+}
+
+- (id) outlineView: (NSOutlineView *)ov
+  objectValueForTableColumn: (NSTableColumn *)tc
+  byItem: (id)item
+{
+  if ([item isKindOfClass: [NSString class]])
+    {
+      return [self displayValueForVideoAtPath: item
+                             columnIdentifier: [tc identifier]];
+    }
+
+  return nil;
+}
+
+- (id) outlineView: (NSOutlineView *)ov
+  persistentObjectForItem: (id)item
+{
+  if ([item isKindOfClass: [NSString class]])
+    {
+      return item;
+    }
+
+  return nil;
+}
+
+- (id) outlineView: (NSOutlineView *)ov
+  itemForPersistentObject: (id)object
+{
+  if ([object isKindOfClass: [NSString class]]
+      && [_playedVideos containsObject: object])
+    {
+      return object;
+    }
+
+  return nil;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+      setObjectValue: (id)object
+      forTableColumn: (NSTableColumn *)tc
+              byItem: (id)item
+{
+  // Playlist entries are managed by opening files.
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+          acceptDrop: (id <NSDraggingInfo>)info
+                item: (id)item
+          childIndex: (NSInteger)index
+{
+  return NO;
+}
+
+- (NSDragOperation) outlineView: (NSOutlineView *)ov
+                   validateDrop: (id <NSDraggingInfo>)info
+                   proposedItem: (id)item
+             proposedChildIndex: (NSInteger)index
+{
+  return NSDragOperationNone;
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+          writeItems: (NSArray *)items
+        toPasteboard: (NSPasteboard *)pboard
+{
+  return NO;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+  sortDescriptorsDidChange: (NSArray *)oldSortDescriptors
+{
+}
+
+- (NSArray *) outlineView: (NSOutlineView *)ov
+namesOfPromisedFilesDroppedAtDestination: (NSURL *)dropDestination
+          forDraggedItems: (NSArray *)items
+{
+  return nil;
+}
+
+// Delegate NSOutlineView
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+    shouldSelectItem: (id)item
+{
+  return [item isKindOfClass: [NSString class]];
+}
+
+- (void) outlineViewColumnDidMove: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewColumnDidResize: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewItemDidCollapse: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewItemDidExpand: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewItemWillCollapse: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewItemWillExpand: (NSNotification *)notification
+{
+}
+
+- (void) outlineViewSelectionDidChange: (NSNotification *)notification
+{
+  NSOutlineView *outlineView = [notification object];
+  NSInteger row = [outlineView selectedRow];
+
+  if (_reloadingPlaylistViews)
+    {
+      return;
+    }
+
+  if (row >= 0)
+    {
+      id item = [outlineView itemAtRow: row];
+
+      if ([item isKindOfClass: [NSString class]])
+        {
+          [self playVideoAtPath: item sender: outlineView];
+        }
+    }
+}
+
+- (void) outlineViewSelectionIsChanging: (NSNotification *)notification
+{
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+  shouldCollapseItem: (id)item
+{
+  return NO;
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+shouldEditTableColumn: (NSTableColumn *)tc
+                item: (id)item
+{
+  return NO;
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+    shouldExpandItem: (id)item
+{
+  return NO;
+}
+
+- (BOOL) outlineView: (NSOutlineView *)ov
+shouldSelectTableColumn: (NSTableColumn *)tc
+{
+  return YES;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+     willDisplayCell: (id)cell
+      forTableColumn: (NSTableColumn *)tc
+                item: (id)item
+{
+}
+
+- (NSCell *) outlineView: (NSOutlineView *)ov
+  dataCellForTableColumn: (NSTableColumn *)tc
+                    item: (id)item
+{
+  return nil;
+}
+
+- (CGFloat) outlineView: (NSOutlineView *)ov
+  heightOfRowByItem: (id)item
+{
+  return [ov rowHeight];
+}
+
+- (CGFloat) outlineView: (NSOutlineView *)ov
+  sizeToFitWidthOfColumn: (NSInteger)column
+{
+  return 0.0;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+willDisplayOutlineCell: (id)cell
+      forTableColumn: (NSTableColumn *)tc
+                item: (id)item
+{
+}
+
+- (BOOL) selectionShouldChangeInOutlineView: (NSOutlineView *)ov
+{
+  return YES;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+ didClickTableColumn: (NSTableColumn *)tc
+{
+}
+
+- (NSView *) outlineView: (NSOutlineView *)ov
+      viewForTableColumn: (NSTableColumn *)tc
+                    item: (id)item
+{
+  return nil;
+}
+
+- (NSTableRowView *) outlineView: (NSOutlineView *)ov
+                  rowViewForItem: (id)item
+{
+  return nil;
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+       didAddRowView: (NSTableRowView *)rowView
+              forRow: (NSInteger)rowIndex
+{
+}
+
+- (void) outlineView: (NSOutlineView *)ov
+    didRemoveRowView: (NSTableRowView *)rowView
+              forRow: (NSInteger)rowIndex
+{
+}
+
 // Window Delegate
 
 - (NSSize) windowWillResize: (NSWindow *)sender
@@ -215,6 +498,11 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender
 {
+  if (filename == nil)
+    {
+      return NO;
+    }
+
   NSURL *url = [NSURL fileURLWithPath: filename];
 
   if (url != nil)
@@ -264,6 +552,14 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [defaults synchronize];
 }
 
+- (void) reloadPlaylistViews
+{
+  _reloadingPlaylistViews = YES;
+  [_mediaTable reloadData];
+  [_playlistOutline reloadData];
+  _reloadingPlaylistViews = NO;
+}
+
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename
 {
   NSString *length = @"";
@@ -284,6 +580,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
     }
 
   [_videoLengths setObject: length forKey: filename];
+  [self reloadPlaylistViews];
 }
 
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename
@@ -296,6 +593,21 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
     }
 
   return cachedLength;
+}
+
+- (NSString *) displayValueForVideoAtPath: (NSString *)filename
+                         columnIdentifier: (id)identifier
+{
+  if ([identifier isEqualToString: @"column1"])
+    {
+      return [filename lastPathComponent];
+    }
+  else if ([identifier isEqualToString: @"column2"])
+    {
+      return [self lengthStringForVideoAtPath: filename];
+    }
+
+  return filename;
 }
 
 - (NSString *) stringFromDuration: (int64_t)duration

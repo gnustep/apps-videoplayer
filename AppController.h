@@ -14,7 +14,7 @@
 #import <Foundation/Foundation.h>
 #import <AppKit/AppKit.h>
 
-@interface AppController : NSObject <NSTableViewDelegate, NSTableViewDataSource, NSWindowDelegate>
+@interface AppController : NSObject <NSTableViewDelegate, NSTableViewDataSource, NSWindowDelegate, NSOutlineViewDelegate, NSOutlineViewDataSource>
 {
   IBOutlet NSWindow *_window;
   IBOutlet NSMovieView *_movieView;
@@ -28,6 +28,7 @@
 
   NSMutableArray *_playedVideos;
   NSMutableDictionary *_videoLengths;
+  BOOL _reloadingPlaylistViews;
 }
 
 // Class methods...
