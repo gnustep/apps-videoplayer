@@ -25,9 +25,12 @@
   IBOutlet NSSlider *_volume;
   IBOutlet NSSwitch *_mute;
   IBOutlet NSTextField *_info;
+  IBOutlet NSTextField *_time;
+  IBOutlet NSSlider *_timeSlider;
 
   NSMutableArray *_playedVideos;
   NSMutableDictionary *_videoLengths;
+  NSTimer *_timeTimer;
   BOOL _reloadingPlaylistViews;
 }
 
@@ -46,6 +49,7 @@
 - (IBAction) openFile: (id)sender;
 - (IBAction) volume: (id)sender;
 - (IBAction) mute: (id)sender;
+- (IBAction) time: (id)sender;
 
 @end
 

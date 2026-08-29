@@ -21,9 +21,14 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
 - (void) savePlayedVideos;
 - (void) reloadPlaylistViews;
+- (void) attachControlsPanel;
 - (void) setButtonIconsInView: (NSView *)view;
 - (void) setIconForButton: (NSButton *)button;
+- (void) startTimeTimer;
+- (void) stopTimeTimer;
+- (void) updateTimeLeft: (NSTimer *)timer;
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename;
+- (int64_t) durationForCurrentVideo;
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename;
 - (NSString *) displayValueForVideoAtPath: (NSString *)filename
                              columnIdentifier: (id)identifier;
@@ -58,6 +63,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
   [_volume setFloatValue: 1.0];
   [_info setStringValue: @""];
+  [_time setStringValue: @""];
   [self setButtonIconsInView: [_controlsPanel contentView]];
 
   _playedVideos = [[NSMutableArray alloc] init];
@@ -80,10 +86,12 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_playlistOutline deselectAll: self];
   
   [_window setDelegate: self];
+  [self attachControlsPanel];
 }
 
 - (void) dealloc
 {
+  [self stopTimeTimer];
   RELEASE(_playedVideos);
   RELEASE(_videoLengths);
   [super dealloc];
@@ -171,6 +179,11 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (IBAction) mute: (id)sender
 {
   [_movieView setMuted: [sender state] == NSOnState ? YES : NO];
+}
+
+- (IBAction) time: (id)sender
+{
+  [self updateTimeLeft: nil];
 }
 
 // Data Source (TableView)
@@ -527,6 +540,8 @@ willDisplayOutlineCell: (id)cell
           [_movieView setMovie: movie];
           RELEASE(movie);
           [_movieView start: sender];
+          [self startTimeTimer];
+          [self updateTimeLeft: nil];
           frame = [_movieView movieRect];
 
           // Resize and show the window...
@@ -535,6 +550,7 @@ willDisplayOutlineCell: (id)cell
               [_window setContentSize: frame.size];
             }
           [_window makeKeyAndOrderFront: sender];
+          [_controlsPanel orderFront: sender];
           [self cacheLengthForCurrentVideoAtPath: filename];
 
           return YES;
@@ -571,6 +587,26 @@ willDisplayOutlineCell: (id)cell
   [_mediaTable reloadData];
   [_playlistOutline reloadData];
   _reloadingPlaylistViews = wasReloadingPlaylistViews;
+}
+
+- (void) attachControlsPanel
+{
+  NSRect windowFrame;
+  NSRect controlsFrame;
+
+  if (_window == nil || _controlsPanel == nil)
+    {
+      return;
+    }
+
+  windowFrame = [_window frame];
+  controlsFrame = [_controlsPanel frame];
+  controlsFrame.origin.x =
+    NSMinX(windowFrame) + ((NSWidth(windowFrame) - NSWidth(controlsFrame)) / 2.0);
+  controlsFrame.origin.y = NSMinY(windowFrame) - NSHeight(controlsFrame);
+  [_controlsPanel setFrame: controlsFrame display: NO];
+  [_window addChildWindow: _controlsPanel ordered: NSWindowBelow];
+  [_controlsPanel orderOut: self];
 }
 
 - (void) setButtonIconsInView: (NSView *)view
@@ -629,6 +665,65 @@ willDisplayOutlineCell: (id)cell
     }
 }
 
+- (void) startTimeTimer
+{
+  if (_timeTimer != nil)
+    {
+      return;
+    }
+
+  _timeTimer = RETAIN([NSTimer scheduledTimerWithTimeInterval: 0.5
+                                                       target: self
+                                                     selector: @selector(updateTimeLeft:)
+                                                     userInfo: nil
+                                                      repeats: YES]);
+}
+
+- (void) stopTimeTimer
+{
+  if (_timeTimer != nil)
+    {
+      [_timeTimer invalidate];
+      RELEASE(_timeTimer);
+      _timeTimer = nil;
+    }
+}
+
+- (void) updateTimeLeft: (NSTimer *)timer
+{
+  int64_t duration = [self durationForCurrentVideo];
+  double position = 0.0;
+  int64_t remaining = 0;
+
+  if (duration <= 0)
+    {
+      [_time setStringValue: @""];
+      return;
+    }
+
+  if ([_movieView respondsToSelector: @selector(currentPosition)])
+    {
+      position = [_movieView currentPosition];
+    }
+
+  if (position < 0.0)
+    {
+      position = 0.0;
+    }
+  else if (position > 1.0)
+    {
+      position = 1.0;
+    }
+
+  remaining = (int64_t)((double)duration * (1.0 - position));
+  [_time setStringValue: [self stringFromDuration: remaining]];
+
+  if (![_movieView isPlaying] && position >= 1.0)
+    {
+      [self stopTimeTimer];
+    }
+}
+
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename
 {
   NSString *length = @"";
@@ -638,18 +733,25 @@ willDisplayOutlineCell: (id)cell
       return;
     }
 
-  if ([_movieView respondsToSelector: @selector(getDuration)])
-    {
-      int64_t duration = [_movieView getDuration];
+  int64_t duration = [self durationForCurrentVideo];
 
-      if (duration > 0)
-        {
-          length = [self stringFromDuration: duration];
-        }
+  if (duration > 0)
+    {
+      length = [self stringFromDuration: duration];
     }
 
   [_videoLengths setObject: length forKey: filename];
   [self reloadPlaylistViews];
+}
+
+- (int64_t) durationForCurrentVideo
+{
+  if ([_movieView respondsToSelector: @selector(getDuration)])
+    {
+      return [_movieView getDuration];
+    }
+
+  return 0;
 }
 
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename
