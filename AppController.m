@@ -21,6 +21,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
 - (void) savePlayedVideos;
 - (void) reloadPlaylistViews;
+- (void) setButtonIconsInView: (NSView *)view;
+- (void) setIconForButton: (NSButton *)button;
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename;
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename;
 - (NSString *) displayValueForVideoAtPath: (NSString *)filename
@@ -56,6 +58,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
   [_volume setFloatValue: 1.0];
   [_info setStringValue: @""];
+  [self setButtonIconsInView: [_controlsPanel contentView]];
 
   _playedVideos = [[NSMutableArray alloc] init];
   _videoLengths = [[NSMutableDictionary alloc] init];
@@ -568,6 +571,62 @@ willDisplayOutlineCell: (id)cell
   [_mediaTable reloadData];
   [_playlistOutline reloadData];
   _reloadingPlaylistViews = wasReloadingPlaylistViews;
+}
+
+- (void) setButtonIconsInView: (NSView *)view
+{
+  NSEnumerator *enumerator = [[view subviews] objectEnumerator];
+  NSView *subview = nil;
+
+  if ([view isKindOfClass: [NSButton class]])
+    {
+      [self setIconForButton: (NSButton *)view];
+    }
+
+  while ((subview = [enumerator nextObject]) != nil)
+    {
+      [self setButtonIconsInView: subview];
+    }
+}
+
+- (void) setIconForButton: (NSButton *)button
+{
+  SEL action = [button action];
+  NSString *imageName = nil;
+  NSImage *image = nil;
+
+  if (action == @selector(gotoBeginning:))
+    {
+      imageName = @"button-start.png";
+    }
+  else if (action == @selector(stepBack:))
+    {
+      imageName = @"button-step-back.png";
+    }
+  else if (action == @selector(start:))
+    {
+      imageName = @"button-play.png";
+    }
+  else if (action == @selector(stepForward:))
+    {
+      imageName = @"button-step-forward.png";
+    }
+  else if (action == @selector(gotoEnd:))
+    {
+      imageName = @"button-end.png";
+    }
+
+  if (imageName == nil)
+    {
+      return;
+    }
+
+  image = [NSImage imageNamed: imageName];
+  if (image != nil)
+    {
+      [button setImage: image];
+      [button setImagePosition: NSImageOnly];
+    }
 }
 
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename

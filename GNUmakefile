@@ -34,6 +34,11 @@ VideoPlayer_APPLICATION_ICON = videoplayer.png
 VideoPlayer_RESOURCE_FILES = \
 Resources/VideoPlayer.gorm \
 Resources/videoplayer.png \
+Resources/button-start.png \
+Resources/button-step-back.png \
+Resources/button-play.png \
+Resources/button-step-forward.png \
+Resources/button-end.png \
 
 
 #
