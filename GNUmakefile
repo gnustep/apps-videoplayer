@@ -37,6 +37,7 @@ Resources/videoplayer.png \
 Resources/button-start.png \
 Resources/button-step-back.png \
 Resources/button-play.png \
+Resources/button-stop.png \
 Resources/button-step-forward.png \
 Resources/button-end.png \
 

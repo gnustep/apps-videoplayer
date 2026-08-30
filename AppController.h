@@ -28,6 +28,14 @@
   IBOutlet NSTextField *_time;
   IBOutlet NSSlider *_timeSlider;
 
+  IBOutlet NSButton *_start;
+  IBOutlet NSButton *_stepBack;
+  IBOutlet NSButton *_play;
+  IBOutlet NSButton *_stop;
+  IBOutlet NSButton *_stepForward;
+  IBOutlet NSButton *_end;
+  IBOutlet NSTextField *_volumeLevel;
+  
   NSMutableArray *_playedVideos;
   NSMutableDictionary *_videoLengths;
   NSTimer *_timeTimer;

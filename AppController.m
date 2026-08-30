@@ -84,9 +84,19 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_playlistOutline setDataSource: self];
   [self reloadPlaylistViews];
   [_playlistOutline deselectAll: self];
+
+  // Add icons...
+  [_start setImage: [NSImage imageNamed: @"button-start"]];
+  [_stepBack setImage: [NSImage imageNamed: @"button-step-back"]];
+  [_play setImage: [NSImage imageNamed: @"button-play"]];
+  [_stop setImage: [NSImage imageNamed: @"button-stop"]];
+  [_stepForward setImage: [NSImage imageNamed: @"button-step-forward"]];
+  [_end setImage: [NSImage imageNamed: @"button-end"]];
+
+  [_volumeLevel setFloatValue: 100.0]; // set to 100%. Might get this from defaults later.
   
   [_window setDelegate: self];
-  [self attachControlsPanel];
+  //  [self attachControlsPanel];
 }
 
 - (void) dealloc
@@ -173,7 +183,9 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 - (IBAction) volume: (id)sender
 {
-  [_movieView setVolume: [sender floatValue]];
+  CGFloat level = [sender floatValue];
+  [_movieView setVolume: level];
+  [_volumeLevel setIntegerValue: (NSUInteger)(level * 100.00)];
 }
 
 - (IBAction) mute: (id)sender
@@ -605,7 +617,7 @@ willDisplayOutlineCell: (id)cell
     NSMinX(windowFrame) + ((NSWidth(windowFrame) - NSWidth(controlsFrame)) / 2.0);
   controlsFrame.origin.y = NSMinY(windowFrame) - NSHeight(controlsFrame);
   [_controlsPanel setFrame: controlsFrame display: NO];
-  [_window addChildWindow: _controlsPanel ordered: NSWindowBelow];
+  // [_window addChildWindow: _controlsPanel ordered: NSWindowBelow];
   [_controlsPanel orderOut: self];
 }
 

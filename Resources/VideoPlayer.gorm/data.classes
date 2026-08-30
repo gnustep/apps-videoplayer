@@ -19,7 +19,14 @@
 	    "_timeSlider",
 	    "_mediaPanel",
 	    "_mediaTable",
-	    "_playlistOutline"
+	    "_playlistOutline",
+	    "_end",
+	    "_play",
+	    "_start",
+	    "_stepBack",
+	    "_stepForward",
+	    "_stop",
+	    "_volumeLevel"
 	);
 	Super = NSObject;
     };
