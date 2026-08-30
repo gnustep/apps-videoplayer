@@ -14,6 +14,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 @interface NSMovieView (VideoPlayerDuration)
 - (int64_t) getDuration;
+- (BOOL) seekToTime: (int64_t)timestamp;
+- (void) displayCurrentFrame;
 @end
 
 @interface AppController (Private)
@@ -64,6 +66,12 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_volume setFloatValue: 1.0];
   [_info setStringValue: @""];
   [_time setStringValue: @""];
+  [_timeSlider setMinValue: 0.0];
+  [_timeSlider setMaxValue: 1.0];
+  [_timeSlider setDoubleValue: 0.0];
+  [_timeSlider setTarget: self];
+  [_timeSlider setAction: @selector(time:)];
+  [_timeSlider setContinuous: NO];
   [self setButtonIconsInView: [_controlsPanel contentView]];
 
   _playedVideos = [[NSMutableArray alloc] init];
@@ -195,6 +203,55 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 - (IBAction) time: (id)sender
 {
+  int64_t duration = [self durationForCurrentVideo];
+  double position = [_timeSlider doubleValue];
+  int64_t timestamp = 0;
+  BOOL wasPlaying = [_movieView isPlaying];
+  BOOL didSeek = NO;
+
+  if (_seekingWithTimeSlider)
+    {
+      return;
+    }
+
+  if (duration <= 0 || [_movieView movie] == nil)
+    {
+      [_timeSlider setDoubleValue: 0.0];
+      [self updateTimeLeft: nil];
+      return;
+    }
+
+  if (position < 0.0)
+    {
+      position = 0.0;
+    }
+  else if (position > 1.0)
+    {
+      position = 1.0;
+    }
+
+  timestamp = (int64_t)((double)duration * position);
+  _seekingWithTimeSlider = YES;
+  [NSObject cancelPreviousPerformRequestsWithTarget: _movieView];
+  if ([_movieView respondsToSelector: @selector(seekToTime:)])
+    {
+      didSeek = [_movieView seekToTime: timestamp];
+      if (didSeek)
+        {
+          if ([_movieView respondsToSelector: @selector(displayCurrentFrame)])
+            {
+              [_movieView displayCurrentFrame];
+            }
+          if (wasPlaying)
+            {
+              [_movieView performSelector: @selector(start:)
+                               withObject: sender
+                               afterDelay: 0.1];
+            }
+        }
+    }
+  _seekingWithTimeSlider = NO;
+
   [self updateTimeLeft: nil];
 }
 
@@ -707,9 +764,15 @@ willDisplayOutlineCell: (id)cell
   double position = 0.0;
   int64_t remaining = 0;
 
+  if (_seekingWithTimeSlider)
+    {
+      return;
+    }
+
   if (duration <= 0)
     {
       [_time setStringValue: @""];
+      [_timeSlider setDoubleValue: 0.0];
       return;
     }
 
@@ -729,6 +792,7 @@ willDisplayOutlineCell: (id)cell
 
   remaining = (int64_t)((double)duration * (1.0 - position));
   [_time setStringValue: [self stringFromDuration: remaining]];
+  [_timeSlider setDoubleValue: position];
 
   if (![_movieView isPlaying] && position >= 1.0)
     {

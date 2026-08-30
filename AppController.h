@@ -40,6 +40,7 @@
   NSMutableDictionary *_videoLengths;
   NSTimer *_timeTimer;
   BOOL _reloadingPlaylistViews;
+  BOOL _seekingWithTimeSlider;
 }
 
 // Class methods...
