@@ -25,6 +25,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (void) savePlayedVideos;
 - (void) reloadPlaylistViews;
 - (void) attachControlsPanel;
+- (void) reconnectMovieControls;
+- (void) replaceMovieViewForNewVideo;
 - (void) setButtonIconsInView: (NSView *)view;
 - (void) setIconForButton: (NSButton *)button;
 - (void) startTimeTimer;
@@ -73,6 +75,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_timeSlider setTarget: self];
   [_timeSlider setAction: @selector(time:)];
   [_timeSlider setContinuous: NO];
+  [self reconnectMovieControls];
   [self setButtonIconsInView: [_controlsPanel contentView]];
 
   _playedVideos = [[NSMutableArray alloc] init];
@@ -574,8 +577,7 @@ willDisplayOutlineCell: (id)cell
 
   [NSObject cancelPreviousPerformRequestsWithTarget: _movieView];
   [self stopTimeTimer];
-  [_movieView stop: sender];
-  [_movieView setMovie: nil];
+  [self replaceMovieViewForNewVideo];
   [_time setStringValue: @""];
   [_timeSlider setDoubleValue: 0.0];
 
@@ -672,6 +674,60 @@ willDisplayOutlineCell: (id)cell
   [_mediaTable reloadData];
   [_playlistOutline reloadData];
   _reloadingPlaylistViews = wasReloadingPlaylistViews;
+}
+
+- (void) reconnectMovieControls
+{
+  [_start setTarget: _movieView];
+  [_start setAction: @selector(gotoBeginning:)];
+  [_stepBack setTarget: _movieView];
+  [_stepBack setAction: @selector(stepBack:)];
+  [_play setTarget: _movieView];
+  [_play setAction: @selector(start:)];
+  [_stop setTarget: _movieView];
+  [_stop setAction: @selector(stop:)];
+  [_stepForward setTarget: _movieView];
+  [_stepForward setAction: @selector(stepForward:)];
+  [_end setTarget: _movieView];
+  [_end setAction: @selector(gotoEnd:)];
+}
+
+- (void) replaceMovieViewForNewVideo
+{
+  NSMovieView *oldMovieView = _movieView;
+  NSMovieView *newMovieView = nil;
+  NSView *superview = nil;
+  NSRect frame = NSZeroRect;
+  NSUInteger autoresizingMask = 0;
+
+  if (oldMovieView == nil)
+    {
+      return;
+    }
+
+  [NSObject cancelPreviousPerformRequestsWithTarget: oldMovieView];
+  [oldMovieView stop: self];
+
+  superview = [oldMovieView superview];
+  if (superview == nil)
+    {
+      return;
+    }
+
+  frame = [oldMovieView frame];
+  autoresizingMask = [oldMovieView autoresizingMask];
+
+  newMovieView = [[NSMovieView alloc] initWithFrame: frame];
+  [newMovieView setAutoresizingMask: autoresizingMask];
+  [newMovieView setVolume: [_volume floatValue]];
+  [newMovieView setMuted: [_mute state] == NSOnState ? YES : NO];
+
+  [superview replaceSubview: oldMovieView
+                       with: newMovieView];
+
+  _movieView = newMovieView;
+  [self reconnectMovieControls];
+  RELEASE(newMovieView);
 }
 
 - (void) attachControlsPanel
