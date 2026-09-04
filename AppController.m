@@ -20,6 +20,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 @interface AppController (Private)
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender;
+- (BOOL) openVideoDocumentAtPath: (NSString *)filename;
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
 - (void) savePlayedVideos;
 - (void) reloadPlaylistViews;
@@ -129,11 +130,6 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   _reloadingPlaylistViews = NO;
 }
 
-- (BOOL) applicationShouldTerminate: (id)sender
-{
-  return YES;
-}
-
 - (void) applicationWillTerminate: (NSNotification *)aNotif
 {
 }
@@ -141,23 +137,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (BOOL) application: (NSApplication *)application
 	    openFile: (NSString *)fileName
 {
-  if (fileName == nil)
-    {
-      return NO;
-    }
-
-  if ([self playVideoAtPath: fileName sender: application])
-    {
-      if ([self addPlayedVideoIfNeeded: fileName])
-        {
-          [self savePlayedVideos];
-          [self reloadPlaylistViews];
-        }
-
-      return YES;
-    }
-
-  return NO;
+  return [self openVideoDocumentAtPath: fileName];
 }
 
 - (IBAction) showPrefPanel: (id)sender
@@ -177,14 +157,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
       if (filename != nil)
         {
-          if ([self playVideoAtPath: filename sender: sender])
-            {
-              if ([self addPlayedVideoIfNeeded: filename])
-                {
-                  [self savePlayedVideos];
-                  [self reloadPlaylistViews];
-                }
-            }
+          [self openVideoDocumentAtPath: filename];
         }
     }
 }
@@ -458,7 +431,7 @@ namesOfPromisedFilesDroppedAtDestination: (NSURL *)dropDestination
 
       if ([item isKindOfClass: [NSString class]])
         {
-          [self playVideoAtPath: item sender: outlineView];
+          [self openVideoDocumentAtPath: item];
         }
     }
 }
@@ -591,16 +564,26 @@ willDisplayOutlineCell: (id)cell
 
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender
 {
+  NSMovie *movie = nil;
+  NSURL *url = nil;
+
   if (filename == nil)
     {
       return NO;
     }
 
-  NSURL *url = [NSURL fileURLWithPath: filename];
+  [NSObject cancelPreviousPerformRequestsWithTarget: _movieView];
+  [self stopTimeTimer];
+  [_movieView stop: sender];
+  [_movieView setMovie: nil];
+  [_time setStringValue: @""];
+  [_timeSlider setDoubleValue: 0.0];
+
+  url = [NSURL fileURLWithPath: filename];
 
   if (url != nil)
     {
-      NSMovie *movie = [[NSMovie alloc] initWithURL: url byReference: NO]; 
+      movie = [[NSMovie alloc] initWithURL: url byReference: NO]; 
 
       if (movie != nil)
         {
@@ -627,6 +610,39 @@ willDisplayOutlineCell: (id)cell
     }
 
   return NO;
+}
+
+- (BOOL) openVideoAtPath: (NSString *)filename sender: (id)sender
+{
+  if ([self playVideoAtPath: filename sender: sender])
+    {
+      if ([self addPlayedVideoIfNeeded: filename])
+        {
+          [self savePlayedVideos];
+          [self reloadPlaylistViews];
+        }
+
+      return YES;
+    }
+
+  return NO;
+}
+
+- (BOOL) openVideoDocumentAtPath: (NSString *)filename
+{
+  NSDocument *document = nil;
+
+  if (filename == nil)
+    {
+      return NO;
+    }
+
+  document =
+    [[NSDocumentController sharedDocumentController]
+      openDocumentWithContentsOfFile: filename
+                              display: YES];
+
+  return document != nil;
 }
 
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename

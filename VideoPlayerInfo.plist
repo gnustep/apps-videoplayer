@@ -11,4 +11,33 @@
     NSMainNibFile = "VideoPlayer.gorm";
     NSPrincipalClass = NSApplication;
     NSRole = Application;
+    NSTypes = (
+        {
+            NSDocumentClass = VideoDocument;
+            NSHumanReadableName = "Video File";
+            NSIcon = "videoplayer.png";
+            NSName = Video;
+            NSRole = Viewer;
+            NSUnixExtensions = (
+                "3g2",
+                "3gp",
+                "asf",
+                "avi",
+                "flv",
+                "m2ts",
+                "m4v",
+                "mkv",
+                "mov",
+                "mp4",
+                "mpeg",
+                "mpg",
+                "mts",
+                "ogg",
+                "ogv",
+                "ts",
+                "webm",
+                "wmv"
+            );
+        }
+    );
 }

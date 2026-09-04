@@ -48,10 +48,12 @@
 
 // Notification methods...
 - (void) applicationDidFinishLaunching: (NSNotification *)aNotif;
-- (BOOL) applicationShouldTerminate: (id)sender;
 - (void) applicationWillTerminate: (NSNotification *)aNotif;
 - (BOOL) application: (NSApplication *)application
 	    openFile: (NSString *)fileName;
+
+// Document playback support.
+- (BOOL) openVideoAtPath: (NSString *)filename sender: (id)sender;
 
 // Actions...
 - (IBAction) showPrefPanel: (id)sender;

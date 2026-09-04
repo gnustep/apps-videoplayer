@@ -46,13 +46,15 @@ Resources/button-end.png \
 # Header files
 #
 VideoPlayer_HEADER_FILES = \
-AppController.h
+AppController.h \
+VideoDocument.h
 
 #
 # Objective-C Class files
 #
 VideoPlayer_OBJC_FILES = \
-AppController.m
+AppController.m \
+VideoDocument.m
 
 #
 # Other sources
