@@ -168,8 +168,12 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (IBAction) volume: (id)sender
 {
   CGFloat level = [sender floatValue];
+  NSUInteger vol = (NSUInteger)(level * 100.0);
+  NSString *value = [NSString stringWithFormat: @"%lu%%", vol];
+
+  // Set volume and the value of the volume display...
   [_movieView setVolume: level];
-  [_volumeLevel setIntegerValue: (NSUInteger)(level * 100.00)];
+  [_volumeLevel setStringValue: value];
 }
 
 - (IBAction) mute: (id)sender
@@ -491,7 +495,7 @@ shouldSelectTableColumn: (NSTableColumn *)tc
 - (CGFloat) outlineView: (NSOutlineView *)ov
   sizeToFitWidthOfColumn: (NSInteger)column
 {
-  return 0.0;
+  return 200.0;
 }
 
 - (void) outlineView: (NSOutlineView *)ov
