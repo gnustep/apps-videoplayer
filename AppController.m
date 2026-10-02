@@ -10,6 +10,8 @@
 
 #import "AppController.h"
 
+#import <math.h>
+
 static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
 @interface NSMovieView (VideoPlayerDuration)
@@ -34,6 +36,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (void) updateTimeLeft: (NSTimer *)timer;
 - (void) cacheLengthForCurrentVideoAtPath: (NSString *)filename;
 - (int64_t) durationForCurrentVideo;
+- (void) updateMovieWindowAspectRatio;
 - (NSString *) lengthStringForVideoAtPath: (NSString *)filename;
 - (NSString *) displayValueForVideoAtPath: (NSString *)filename
                              columnIdentifier: (id)identifier;
@@ -105,7 +108,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_stepForward setImage: [NSImage imageNamed: @"button-step-forward"]];
   [_end setImage: [NSImage imageNamed: @"button-end"]];
 
-  [_volumeLevel setFloatValue: 100.0]; // set to 100%. Might get this from defaults later.
+  [_volumeLevel setStringValue: @"100%%"]; // set to 100%. Might get this from defaults later.
   
   [_window setDelegate: self];
   //  [self attachControlsPanel];
@@ -547,22 +550,41 @@ willDisplayOutlineCell: (id)cell
 {
   NSMovie *movie = [_movieView movie];
   
-  if (movie != nil)
+  if (movie != nil && sender == _window)
     {
       NSRect movieRect = [_movieView movieRect];
       
       if (movieRect.size.width > 0 && movieRect.size.height > 0)
       	{
       	  CGFloat aspectRatio = movieRect.size.width / movieRect.size.height;
-      	  NSRect frame = [_window frame];
-      	  NSRect contentRect = [_window contentRectForFrameRect: frame];
-      	  
-      	  // Calculate new content size
-      	  CGFloat newWidth = frameSize.width - (frame.size.width - contentRect.size.width);
-      	  CGFloat newHeight = newWidth / aspectRatio;
-      	  
-      	  // Adjust frame size to maintain aspect ratio
-      	  frameSize.height = newHeight + (frame.size.height - contentRect.size.height);
+      	  NSRect currentFrame = [sender frame];
+      	  NSRect currentContentRect =
+            [sender contentRectForFrameRect: currentFrame];
+      	  NSRect proposedContentRect =
+            [sender contentRectForFrameRect: NSMakeRect(0, 0,
+                                                        frameSize.width,
+                                                        frameSize.height)];
+          CGFloat widthChange = fabs(proposedContentRect.size.width
+                                     - currentContentRect.size.width);
+          CGFloat heightChange = fabs(proposedContentRect.size.height
+                                      - currentContentRect.size.height);
+
+          if (widthChange >= heightChange)
+            {
+              proposedContentRect.size.height =
+                proposedContentRect.size.width / aspectRatio;
+            }
+          else
+            {
+              proposedContentRect.size.width =
+                proposedContentRect.size.height * aspectRatio;
+            }
+
+          frameSize =
+            [sender frameRectForContentRect:
+                      NSMakeRect(0, 0,
+                                 proposedContentRect.size.width,
+                                 proposedContentRect.size.height)].size;
       	}
     }
 
@@ -605,6 +627,7 @@ willDisplayOutlineCell: (id)cell
           // Resize and show the window...
           if (frame.size.width > 0 && frame.size.height > 0)
             {
+              [self updateMovieWindowAspectRatio];
               [_window setContentSize: frame.size];
             }
           [_window makeKeyAndOrderFront: sender];
@@ -732,6 +755,18 @@ willDisplayOutlineCell: (id)cell
   _movieView = newMovieView;
   [self reconnectMovieControls];
   RELEASE(newMovieView);
+}
+
+- (void) updateMovieWindowAspectRatio
+{
+  NSRect movieRect = [_movieView movieRect];
+
+  if (_window != nil
+      && movieRect.size.width > 0
+      && movieRect.size.height > 0)
+    {
+      [_window setContentAspectRatio: movieRect.size];
+    }
 }
 
 - (void) attachControlsPanel

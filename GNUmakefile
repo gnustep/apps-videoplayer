@@ -27,7 +27,6 @@ PACKAGE_NAME = VideoPlayer
 APP_NAME = VideoPlayer
 VideoPlayer_APPLICATION_ICON = videoplayer.png
 
-
 #
 # Resource files
 #
@@ -40,7 +39,6 @@ Resources/button-play.png \
 Resources/button-stop.png \
 Resources/button-step-forward.png \
 Resources/button-end.png \
-
 
 #
 # Header files
