@@ -1,10 +1,6 @@
 #import "AppController.h"
 #import <math.h>
 
-@interface AppController (SwitchTesting)
-- (void) stopTimeTimer;
-@end
-
 // Exercise the actual Gorm view and installed playback backend, including
 // queued frame callbacks that can outlive a switch to another movie.
 int main(int argc, char **argv)
@@ -38,12 +34,39 @@ int main(int argc, char **argv)
       if (i % 3 == 1)
         [view stop: nil]; // Also switch from paused playback.
     }
-  [view stop: nil];
-  [controller stopTimeTimer];
+  NSWindow *window = [controller valueForKey: @"window"];
+  for (int i = 0; i < 3; i++)
+    {
+      NSCAssert([controller openVideoAtPath:
+        [NSString stringWithUTF8String: argv[1]] sender: nil], @"Reopen audio video");
+      NSCAssert([window isVisible] && [view isPlaying], @"Reopen starts playback");
+      if (i == 1)
+        [view stop: nil];
+      if (i == 2)
+        {
+          [[controller valueForKey: @"timeSlider"] setDoubleValue: 0.5];
+          [controller time: nil]; // Close while a seek restart is pending.
+        }
+      [window performClose: nil];
+      NSCAssert(![window isVisible], @"Video window closes");
+      NSCAssert(![view isPlaying] && [view movie] == nil, @"Close unloads playback");
+      NSCAssert([controller valueForKey: @"timeTimer"] == nil, @"Close stops timer");
+      NSCAssert([[[controller valueForKey: @"info"] stringValue] length] == 0
+        && [[[controller valueForKey: @"time"] stringValue] length] == 0,
+        @"Close clears labels");
+      NSCAssert([[controller valueForKey: @"timeSlider"] doubleValue] == 0.0,
+        @"Close resets position");
+      NSCAssert(![[controller valueForKey: @"subtitles"] isEnabled]
+        && ![[controller valueForKey: @"subtitleStream"] isEnabled],
+        @"Close resets subtitle controls");
+      [[NSRunLoop currentRunLoop] runUntilDate:
+        [NSDate dateWithTimeIntervalSinceNow: 0.3]];
+      NSCAssert(![view isPlaying], @"Queued callbacks do not restart playback");
+    }
   [[NSRunLoop currentRunLoop] runUntilDate:
     [NSDate dateWithTimeIntervalSinceNow: 0.1]];
   [view setMovie: nil];
-  NSLog(@"Video switching tests passed (12 opens)");
+  NSLog(@"Video switching and window closing tests passed");
   [pool drain];
   return 0;
 }

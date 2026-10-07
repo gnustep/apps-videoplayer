@@ -121,6 +121,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 
   [_volumeLevel setStringValue: @"100%%"]; // set to 100%. Might get this from defaults later.
   
+  // The same window and movie view are reused when another video is opened.
+  [_window setReleasedWhenClosed: NO];
   [_window setDelegate: self];
   //  [self attachControlsPanel];
 }
@@ -663,6 +665,25 @@ willDisplayOutlineCell: (id)cell
 }
 
 // Window Delegate
+
+- (void) windowWillClose: (NSNotification *)notification
+{
+  if ([notification object] != _window)
+    {
+      return;
+    }
+
+  // A seek may have queued a delayed restart of playback.
+  [NSObject cancelPreviousPerformRequestsWithTarget: _movieView];
+  [self stopTimeTimer];
+  [_movieView stop: self];
+  [_movieView setMovie: nil];
+  _seekingWithTimeSlider = NO;
+  [_info setStringValue: @""];
+  [_time setStringValue: @""];
+  [_timeSlider setDoubleValue: 0.0];
+  [self updateSubtitleControls];
+}
 
 - (NSSize) windowWillResize: (NSWindow *)sender
 		     toSize: (NSSize)frameSize
