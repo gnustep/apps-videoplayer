@@ -35,6 +35,9 @@
   IBOutlet NSButton *_stepForward;
   IBOutlet NSButton *_end;
   IBOutlet NSTextField *_volumeLevel;
+  NSButton *_subtitles;
+  NSPopUpButton *_subtitleStream;
+  NSArray *_subtitleStreams;
   
   NSMutableArray *_playedVideos;
   NSMutableDictionary *_videoLengths;
@@ -61,6 +64,8 @@
 - (IBAction) volume: (id)sender;
 - (IBAction) mute: (id)sender;
 - (IBAction) time: (id)sender;
+- (IBAction) toggleSubtitles: (id)sender;
+- (IBAction) selectSubtitleStream: (id)sender;
 
 @end
 

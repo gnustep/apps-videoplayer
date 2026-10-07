@@ -20,7 +20,17 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (void) displayCurrentFrame;
 @end
 
+// Optional GNUstep playback backend extensions.
+@interface NSMovieView (VideoPlayerSubtitles)
+- (NSArray *) subtitleStreams;
+- (int) subtitleStreamIndex;
+- (BOOL) setSubtitleStreamIndex: (int)index;
+@end
+
 @interface AppController (Private)
+- (void) createSubtitleControls;
+- (void) updateSubtitleControls;
+- (BOOL) supportsSubtitles;
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender;
 - (BOOL) openVideoDocumentAtPath: (NSString *)filename;
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
@@ -28,7 +38,6 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (void) reloadPlaylistViews;
 - (void) attachControlsPanel;
 - (void) reconnectMovieControls;
-- (void) replaceMovieViewForNewVideo;
 - (void) setButtonIconsInView: (NSView *)view;
 - (void) setIconForButton: (NSButton *)button;
 - (void) startTimeTimer;
@@ -80,6 +89,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_timeSlider setContinuous: NO];
   [self reconnectMovieControls];
   [self setButtonIconsInView: [_controlsPanel contentView]];
+  [self createSubtitleControls];
+  [self updateSubtitleControls];
 
   _playedVideos = [[NSMutableArray alloc] init];
   _videoLengths = [[NSMutableDictionary alloc] init];
@@ -119,6 +130,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [self stopTimeTimer];
   RELEASE(_playedVideos);
   RELEASE(_videoLengths);
+  RELEASE(_subtitleStreams);
   [super dealloc];
 }
 
@@ -182,6 +194,113 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (IBAction) mute: (id)sender
 {
   [_movieView setMuted: [sender state] == NSOnState ? YES : NO];
+}
+
+- (BOOL) supportsSubtitles
+{
+  return [_movieView respondsToSelector: @selector(subtitleStreams)]
+    && [_movieView respondsToSelector: @selector(subtitleStreamIndex)]
+    && [_movieView respondsToSelector: @selector(setSubtitleStreamIndex:)];
+}
+
+- (void) createSubtitleControls
+{
+  NSView *content = [_controlsPanel contentView];
+  NSArray *views = [[content subviews] copy];
+  NSSize size = [content frame].size;
+  NSView *view;
+
+  // Make room below the controls authored in Gorm, keeping their layout intact.
+  [content setAutoresizesSubviews: NO];
+  [_controlsPanel setContentSize: NSMakeSize(size.width, size.height + 40)];
+  for (view in views)
+    {
+      NSPoint origin = [view frame].origin;
+      origin.y += 40;
+      [view setFrameOrigin: origin];
+    }
+  RELEASE(views);
+  [content setAutoresizesSubviews: YES];
+
+  _subtitles = [[NSButton alloc] initWithFrame: NSMakeRect(12, 10, 100, 24)];
+  [_subtitles setButtonType: NSSwitchButton];
+  [_subtitles setTitle: _(@"Subtitles")];
+  [_subtitles setTarget: self];
+  [_subtitles setAction: @selector(toggleSubtitles:)];
+  [content addSubview: _subtitles];
+  RELEASE(_subtitles);
+
+  _subtitleStream = [[NSPopUpButton alloc]
+    initWithFrame: NSMakeRect(120, 10, size.width - 132, 24) pullsDown: NO];
+  [_subtitleStream setAutoresizingMask: NSViewWidthSizable];
+  [_subtitleStream setTarget: self];
+  [_subtitleStream setAction: @selector(selectSubtitleStream:)];
+  [_subtitleStream setToolTip: _(@"Subtitle stream")];
+  [content addSubview: _subtitleStream];
+  RELEASE(_subtitleStream);
+}
+
+- (void) updateSubtitleControls
+{
+  BOOL supported = [self supportsSubtitles];
+  NSArray *streams = supported ? [_movieView subtitleStreams] : nil;
+  int current = supported && [streams count] > 0
+    ? [_movieView subtitleStreamIndex] : -1;
+
+  if (streams == nil)
+    streams = [NSArray array];
+
+  if (_subtitleStreams == nil || ![_subtitleStreams isEqual: streams])
+    {
+      NSDictionary *stream;
+      ASSIGN(_subtitleStreams, streams);
+      [_subtitleStream removeAllItems];
+      for (stream in _subtitleStreams)
+        {
+          int index = [[stream objectForKey: @"index"] intValue];
+          NSString *title = [stream objectForKey: @"title"];
+          NSString *language = [stream objectForKey: @"language"];
+          NSString *label = [NSString stringWithFormat: _(@"Stream %d"), index];
+          if ([title length] > 0)
+            label = [label stringByAppendingFormat: @" — %@", title];
+          if ([language length] > 0)
+            label = [label stringByAppendingFormat: @" (%@)", language];
+          [_subtitleStream addItemWithTitle: label];
+          [[_subtitleStream lastItem] setTag: index];
+        }
+      if ([_subtitleStreams count] == 0)
+        [_subtitleStream addItemWithTitle: _(@"No subtitles available")];
+    }
+
+  if (current >= 0)
+    [_subtitleStream selectItemWithTag: current];
+  [_subtitles setState: current >= 0 ? NSOnState : NSOffState];
+  [_subtitles setEnabled: [_subtitleStreams count] > 0];
+  [_subtitleStream setEnabled: [_subtitleStreams count] > 0];
+}
+
+- (IBAction) toggleSubtitles: (id)sender
+{
+  if ([self supportsSubtitles] && [_subtitleStreams count] > 0)
+    {
+      int index = [_subtitles state] == NSOnState
+        ? (int)[[_subtitleStream selectedItem] tag] : -1;
+      if (![_movieView setSubtitleStreamIndex: index])
+        NSBeep();
+    }
+  [self updateSubtitleControls];
+}
+
+- (IBAction) selectSubtitleStream: (id)sender
+{
+  // Choosing a stream also turns subtitles on.
+  if ([self supportsSubtitles] && [_subtitleStreams count] > 0)
+    {
+      if (![_movieView setSubtitleStreamIndex:
+                           (int)[[_subtitleStream selectedItem] tag]])
+        NSBeep();
+    }
+  [self updateSubtitleControls];
 }
 
 - (IBAction) time: (id)sender
@@ -603,7 +722,9 @@ willDisplayOutlineCell: (id)cell
 
   [NSObject cancelPreviousPerformRequestsWithTarget: _movieView];
   [self stopTimeTimer];
-  [self replaceMovieViewForNewVideo];
+  // Reuse the playback backend. Creating a second NSMovieView can reset
+  // libao's process-wide state while the previous view still owns a device.
+  [_movieView stop: self];
   [_time setStringValue: @""];
   [_timeSlider setDoubleValue: 0.0];
 
@@ -620,6 +741,9 @@ willDisplayOutlineCell: (id)cell
           [_movieView setMovie: movie];
           RELEASE(movie);
           [_movieView start: sender];
+          // Loading and starting a movie can reset the backend's audio settings.
+          [_movieView setVolume: [_volume floatValue]];
+          [_movieView setMuted: [_mute state] == NSOnState];
           [self startTimeTimer];
           [self updateTimeLeft: nil];
           frame = [_movieView movieRect];
@@ -717,44 +841,6 @@ willDisplayOutlineCell: (id)cell
   [_stepForward setAction: @selector(stepForward:)];
   [_end setTarget: _movieView];
   [_end setAction: @selector(gotoEnd:)];
-}
-
-- (void) replaceMovieViewForNewVideo
-{
-  NSMovieView *oldMovieView = _movieView;
-  NSMovieView *newMovieView = nil;
-  NSView *superview = nil;
-  NSRect frame = NSZeroRect;
-  NSUInteger autoresizingMask = 0;
-
-  if (oldMovieView == nil)
-    {
-      return;
-    }
-
-  [NSObject cancelPreviousPerformRequestsWithTarget: oldMovieView];
-  [oldMovieView stop: self];
-
-  superview = [oldMovieView superview];
-  if (superview == nil)
-    {
-      return;
-    }
-
-  frame = [oldMovieView frame];
-  autoresizingMask = [oldMovieView autoresizingMask];
-
-  newMovieView = [[NSMovieView alloc] initWithFrame: frame];
-  [newMovieView setAutoresizingMask: autoresizingMask];
-  [newMovieView setVolume: [_volume floatValue]];
-  [newMovieView setMuted: [_mute state] == NSOnState ? YES : NO];
-
-  [superview replaceSubview: oldMovieView
-                       with: newMovieView];
-
-  _movieView = newMovieView;
-  [self reconnectMovieControls];
-  RELEASE(newMovieView);
 }
 
 - (void) updateMovieWindowAspectRatio
@@ -874,6 +960,8 @@ willDisplayOutlineCell: (id)cell
   int64_t duration = [self durationForCurrentVideo];
   double position = 0.0;
   int64_t remaining = 0;
+
+  [self updateSubtitleControls];
 
   if (_seekingWithTimeSlider)
     {
