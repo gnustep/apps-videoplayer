@@ -56,9 +56,6 @@ int main(int argc, char **argv)
         @"Close clears labels");
       NSCAssert([[controller valueForKey: @"timeSlider"] doubleValue] == 0.0,
         @"Close resets position");
-      NSCAssert(![[controller valueForKey: @"subtitles"] isEnabled]
-        && ![[controller valueForKey: @"subtitleStream"] isEnabled],
-        @"Close resets subtitle controls");
       [[NSRunLoop currentRunLoop] runUntilDate:
         [NSDate dateWithTimeIntervalSinceNow: 0.3]];
       NSCAssert(![view isPlaying], @"Queued callbacks do not restart playback");

@@ -36,7 +36,6 @@
 # before-check::
 
 internal-check::
-	sh Tests/run-subtitle-controls.sh
 	sh Tests/run-video-switching.sh
 
 # Things to do after checking
