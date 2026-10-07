@@ -20,7 +20,17 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (void) displayCurrentFrame;
 @end
 
+// Optional GNUstep playback backend extensions.
+@interface NSMovieView (VideoPlayerSubtitles)
+- (NSArray *) subtitleStreams;
+- (int) subtitleStreamIndex;
+- (BOOL) setSubtitleStreamIndex: (int)index;
+@end
+
 @interface AppController (Private)
+- (void) createSubtitleControls;
+- (void) updateSubtitleControls;
+- (BOOL) supportsSubtitles;
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender;
 - (BOOL) openVideoDocumentAtPath: (NSString *)filename;
 - (BOOL) addPlayedVideoIfNeeded: (NSString *)filename;
@@ -79,6 +89,8 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [_timeSlider setContinuous: NO];
   [self reconnectMovieControls];
   [self setButtonIconsInView: [_controlsPanel contentView]];
+  [self createSubtitleControls];
+  [self updateSubtitleControls];
 
   _playedVideos = [[NSMutableArray alloc] init];
   _videoLengths = [[NSMutableDictionary alloc] init];
@@ -120,6 +132,7 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
   [self stopTimeTimer];
   RELEASE(_playedVideos);
   RELEASE(_videoLengths);
+  RELEASE(_subtitleStreams);
   [super dealloc];
 }
 
@@ -183,6 +196,113 @@ static NSString *PlayedVideosDefaultsKey = @"PlayedVideos";
 - (IBAction) mute: (id)sender
 {
   [_movieView setMuted: [sender state] == NSOnState ? YES : NO];
+}
+
+- (BOOL) supportsSubtitles
+{
+  return [_movieView respondsToSelector: @selector(subtitleStreams)]
+    && [_movieView respondsToSelector: @selector(subtitleStreamIndex)]
+    && [_movieView respondsToSelector: @selector(setSubtitleStreamIndex:)];
+}
+
+- (void) createSubtitleControls
+{
+  NSView *content = [_controlsPanel contentView];
+  NSArray *views = [[content subviews] copy];
+  NSSize size = [content frame].size;
+  NSView *view;
+
+  // Make room below the controls authored in Gorm, keeping their layout intact.
+  [content setAutoresizesSubviews: NO];
+  [_controlsPanel setContentSize: NSMakeSize(size.width, size.height + 40)];
+  for (view in views)
+    {
+      NSPoint origin = [view frame].origin;
+      origin.y += 40;
+      [view setFrameOrigin: origin];
+    }
+  RELEASE(views);
+  [content setAutoresizesSubviews: YES];
+
+  _subtitles = [[NSButton alloc] initWithFrame: NSMakeRect(12, 10, 100, 24)];
+  [_subtitles setButtonType: NSSwitchButton];
+  [_subtitles setTitle: _(@"Subtitles")];
+  [_subtitles setTarget: self];
+  [_subtitles setAction: @selector(toggleSubtitles:)];
+  [content addSubview: _subtitles];
+  RELEASE(_subtitles);
+
+  _subtitleStream = [[NSPopUpButton alloc]
+    initWithFrame: NSMakeRect(120, 10, size.width - 132, 24) pullsDown: NO];
+  [_subtitleStream setAutoresizingMask: NSViewWidthSizable];
+  [_subtitleStream setTarget: self];
+  [_subtitleStream setAction: @selector(selectSubtitleStream:)];
+  [_subtitleStream setToolTip: _(@"Subtitle stream")];
+  [content addSubview: _subtitleStream];
+  RELEASE(_subtitleStream);
+}
+
+- (void) updateSubtitleControls
+{
+  BOOL supported = [self supportsSubtitles];
+  NSArray *streams = supported ? [_movieView subtitleStreams] : nil;
+  int current = supported && [streams count] > 0
+    ? [_movieView subtitleStreamIndex] : -1;
+
+  if (streams == nil)
+    streams = [NSArray array];
+
+  if (_subtitleStreams == nil || ![_subtitleStreams isEqual: streams])
+    {
+      NSDictionary *stream;
+      ASSIGN(_subtitleStreams, streams);
+      [_subtitleStream removeAllItems];
+      for (stream in _subtitleStreams)
+        {
+          int index = [[stream objectForKey: @"index"] intValue];
+          NSString *title = [stream objectForKey: @"title"];
+          NSString *language = [stream objectForKey: @"language"];
+          NSString *label = [NSString stringWithFormat: _(@"Stream %d"), index];
+          if ([title length] > 0)
+            label = [label stringByAppendingFormat: @" — %@", title];
+          if ([language length] > 0)
+            label = [label stringByAppendingFormat: @" (%@)", language];
+          [_subtitleStream addItemWithTitle: label];
+          [[_subtitleStream lastItem] setTag: index];
+        }
+      if ([_subtitleStreams count] == 0)
+        [_subtitleStream addItemWithTitle: _(@"No subtitles available")];
+    }
+
+  if (current >= 0)
+    [_subtitleStream selectItemWithTag: current];
+  [_subtitles setState: current >= 0 ? NSOnState : NSOffState];
+  [_subtitles setEnabled: [_subtitleStreams count] > 0];
+  [_subtitleStream setEnabled: [_subtitleStreams count] > 0];
+}
+
+- (IBAction) toggleSubtitles: (id)sender
+{
+  if ([self supportsSubtitles] && [_subtitleStreams count] > 0)
+    {
+      int index = [_subtitles state] == NSOnState
+        ? (int)[[_subtitleStream selectedItem] tag] : -1;
+      if (![_movieView setSubtitleStreamIndex: index])
+        NSBeep();
+    }
+  [self updateSubtitleControls];
+}
+
+- (IBAction) selectSubtitleStream: (id)sender
+{
+  // Choosing a stream also turns subtitles on.
+  if ([self supportsSubtitles] && [_subtitleStreams count] > 0)
+    {
+      if (![_movieView setSubtitleStreamIndex:
+                           (int)[[_subtitleStream selectedItem] tag]])
+        NSBeep();
+    }
+  [self updateSubtitleControls];
 }
 
 - (IBAction) time: (id)sender
@@ -562,6 +682,7 @@ willDisplayOutlineCell: (id)cell
   [_info setStringValue: @""];
   [_time setStringValue: @""];
   [_timeSlider setDoubleValue: 0.0];
+  [self updateSubtitleControls];
 }
 
 - (NSSize) windowWillResize: (NSWindow *)sender
@@ -860,6 +981,8 @@ willDisplayOutlineCell: (id)cell
   int64_t duration = [self durationForCurrentVideo];
   double position = 0.0;
   int64_t remaining = 0;
+
+  [self updateSubtitleControls];
 
   if (_seekingWithTimeSlider)
     {
