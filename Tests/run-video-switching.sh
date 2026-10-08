@@ -13,3 +13,6 @@ ffmpeg -nostdin -v error -f lavfi -i 'color=c=red:s=128x96:r=24' \
 clang $(gnustep-config --objc-flags) -I. Tests/SwitchVideos.m AppController.m \
   -o "$test_dir/video-switching" $(gnustep-config --gui-libs)
 xvfb-run -a "$test_dir/video-switching" "$test_dir/audio.mp4" "$test_dir/silent.mp4"
+clang $(gnustep-config --objc-flags) -I. Tests/PlaybackControls.m AppController.m \
+  -o "$test_dir/playback-controls" $(gnustep-config --gui-libs)
+xvfb-run -a "$test_dir/playback-controls" "$test_dir/audio.mp4"

@@ -43,7 +43,7 @@ gopen ./VideoPlayer.app
 
 If `make` fails, inspect the GNUmakefile output for missing GNUstep dependencies or incorrect GNUstep environment setup.
 
-Run `make check` to run the video switching test suite (requires Clang, FFmpeg, Xvfb, and a working audio output). The tests check repeated video changes with audio and silent movies, paused playback, and closing and reopening the video window. A failed test causes `make check` to fail.
+Run `make check` to run the playback tests (requires Clang, FFmpeg with libx264, Xvfb, and a working audio output). The tests check repeated video changes with audio and silent movies, playback controls, closing and reopening the video window, and stopping a slow file reader before reusing its decoder. A failed test causes `make check` to fail.
 
 Video changes reuse the existing movie view to avoid overlapping audio backends and preserve control connections, volume, and mute settings.
 

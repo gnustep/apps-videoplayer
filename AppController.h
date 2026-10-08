@@ -41,6 +41,8 @@
   NSTimer *_timeTimer;
   BOOL _reloadingPlaylistViews;
   BOOL _seekingWithTimeSlider;
+  BOOL _adjustingMovieWindowSize;
+  NSSize _lastMovieContentSize;
 }
 
 // Class methods...

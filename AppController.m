@@ -576,27 +576,24 @@ willDisplayOutlineCell: (id)cell
       if (movieRect.size.width > 0 && movieRect.size.height > 0)
       	{
       	  CGFloat aspectRatio = movieRect.size.width / movieRect.size.height;
-      	  NSRect currentFrame = [sender frame];
-      	  NSRect currentContentRect =
-            [sender contentRectForFrameRect: currentFrame];
       	  NSRect proposedContentRect =
             [sender contentRectForFrameRect: NSMakeRect(0, 0,
                                                         frameSize.width,
                                                         frameSize.height)];
           CGFloat widthChange = fabs(proposedContentRect.size.width
-                                     - currentContentRect.size.width);
+                                     - _lastMovieContentSize.width);
           CGFloat heightChange = fabs(proposedContentRect.size.height
-                                      - currentContentRect.size.height);
+                                      - _lastMovieContentSize.height);
 
-          if (widthChange >= heightChange)
+          if (widthChange >= heightChange * aspectRatio)
             {
               proposedContentRect.size.height =
-                proposedContentRect.size.width / aspectRatio;
+                round(proposedContentRect.size.width / aspectRatio);
             }
           else
             {
               proposedContentRect.size.width =
-                proposedContentRect.size.height * aspectRatio;
+                round(proposedContentRect.size.height * aspectRatio);
             }
 
           frameSize =
@@ -608,6 +605,29 @@ willDisplayOutlineCell: (id)cell
     }
 
   return frameSize;
+}
+
+- (void) windowDidResize: (NSNotification *)notification
+{
+  if ([notification object] != _window || _adjustingMovieWindowSize)
+    return;
+
+  NSRect frame = [_window frame];
+  NSSize size = [self windowWillResize: _window toSize: frame.size];
+
+  // GNUstep's window-manager resize path can bypass windowWillResize:.
+  // Correct the content proportions here as well, preserving the top left.
+  if (fabs(size.width - frame.size.width) > 1.0
+      || fabs(size.height - frame.size.height) > 1.0)
+    {
+      _adjustingMovieWindowSize = YES;
+      frame.origin.y += frame.size.height - size.height;
+      frame.size = size;
+      [_window setFrame: frame display: YES];
+      _adjustingMovieWindowSize = NO;
+    }
+  _lastMovieContentSize =
+    [_window contentRectForFrameRect: [_window frame]].size;
 }
 
 - (BOOL) playVideoAtPath: (NSString *)filename sender: (id)sender
@@ -652,8 +672,13 @@ willDisplayOutlineCell: (id)cell
           if (frame.size.width > 0 && frame.size.height > 0)
             {
               [self updateMovieWindowAspectRatio];
+              _adjustingMovieWindowSize = YES;
               [_window setContentSize: frame.size];
+              _adjustingMovieWindowSize = NO;
+              _lastMovieContentSize =
+                [_window contentRectForFrameRect: [_window frame]].size;
             }
+          [_window setTitle: [filename lastPathComponent]];
           [_window makeKeyAndOrderFront: sender];
           [_controlsPanel orderFront: sender];
           [self cacheLengthForCurrentVideoAtPath: filename];
